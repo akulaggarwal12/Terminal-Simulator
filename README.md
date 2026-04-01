@@ -61,10 +61,11 @@ clang++ main.cpp -o file_explorer -std=c++17 -I/opt/homebrew/include -L/opt/home
 
 If you are using CMake to manage your build, run the following commands:
 ```bash
-mkdir build
-cd build
-cmake ..
-make
+mkdir 
+cd
+ls
+rename
+create
 ```
 
 
