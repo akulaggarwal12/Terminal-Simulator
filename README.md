@@ -1,13 +1,13 @@
 # Aether - File Explorer Simulator
 
 ## About The Project
-Aether is a visual, File Explorer Simulator built entirely in C/C++. Utilizing the Raylib library for rendering, this project provides a graphical user interface (GUI) to navigate and interact with file directories. It simulates a virtual file system environment where users can click on folder icons to open them, view their contents, and track their current path in real-time.
+Aether is a visual, Terminal Simulator built entirely in C/C++. Utilizing the Raylib library for rendering, this project provides a graphical user interface (GUI) to navigate and interact with file directories. It simulates a virtual terminal environment where users can type commands to do various different tasks that are generally used for files or directories in real-time.
 
 ## Features
 * **Graphical Interface:** Built completely from scratch using Raylib.
-* **Interactive Directories:** Clickable folder icons that dynamically update the view to show internal contents.
+* **Interactive Window:** Typing and modifying will be real time interaction.
 * **Path Tracking:** A live-updating address bar displaying the current directory path.
-* **Custom Assets:** Custom icons and fonts mapped to backend file structures.
+* **Custom Assets:** Custom Background Wallpaper is attached which adjusts itself with fullscreen mode.
 * **Pure C/C++ Backend:** Efficient file and directory handling using standard C++ libraries.
 
 ## Built With
@@ -25,7 +25,7 @@ To compile and run this project, you will need:
 ### Installation & Compilation
 1. Clone the repository:  
    ```bash
-   git clone https://github.com/akulaggarwal12/File-Explorer-Simulator.git
+   git clone https://github.com/akulaggarwal12/Terminal-Simulator.git
    ```
 
 
@@ -37,7 +37,7 @@ Depending on your operating system and setup, choose the compilation method that
 
 Ensure you have Raylib installed system-wide, then run:
 ```bash
-g++ main.cpp -o file_explorer -lraylib -lGL -lm -lpthread -ldl -lrt -lX11
+g++ main.cpp -o terminal -lraylib -lGL -lm -lpthread -ldl -lrt -lX11
 ```
 
 
@@ -45,7 +45,7 @@ g++ main.cpp -o file_explorer -lraylib -lGL -lm -lpthread -ldl -lrt -lX11
 
 Assuming you have the Raylib `include` and `lib` folders set up in your compiler path or project directory:
 ```bash
-g++ main.cpp -o file_explorer.exe -O2 -Wall -Wno-missing-braces -I include/ -L lib/ -lraylib -lopengl32 -lgdi32 -lwinmm
+g++ main.cpp -o terminal.exe -O2 -Wall -Wno-missing-braces -I include/ -L lib/ -lraylib -lopengl32 -lgdi32 -lwinmm
 ```
 
 
@@ -53,20 +53,9 @@ g++ main.cpp -o file_explorer.exe -O2 -Wall -Wno-missing-braces -I include/ -L l
 
 Using Clang with Raylib installed via Homebrew (`brew install raylib`):
 ```bash
-clang++ main.cpp -o file_explorer -std=c++17 -I/opt/homebrew/include -L/opt/homebrew/lib -lraylib -framework OpenGL -framework Cocoa -framework IOKit -framework CoreVideo
+clang++ main.cpp -o terminal -std=c++17 -I/opt/homebrew/include -L/opt/homebrew/lib -lraylib -framework OpenGL -framework Cocoa -framework IOKit -framework CoreVideo
 ```
 
-
-**Option D: Using CMake (Recommended for Cross-Platform)**
-
-If you are using CMake to manage your build, run the following commands:
-```bash
-mkdir 
-cd
-ls
-rename
-create
-```
 
 
 3. Run the Application
@@ -75,10 +64,10 @@ Once compiled successfully, execute the generated file from your terminal to lau
 
 **On Linux or macOS:**
 ```bash
-./file_explorer
+./terminal
 ```
 
 **On Windows:**
 ```cmd
-file_explorer.exe
+terminal.exe
 ```
