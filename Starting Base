@@ -1,0 +1,46 @@
+#include <iostream>
+#include <fstream>
+#include <filesystem>
+
+using namespace std;
+namespace fs = std :: filesystem;
+
+int main()
+{
+    int flag = 1;
+    string fileName;
+    cout << "Enter the File name needed to be created: ";
+    getline(cin, fileName);
+    
+    // Accessing the Current Path
+    string file= fs::current_path().string();
+    fs:: path ps=fs::path(file) / fileName;
+    
+    // Checking the file existence
+    if (fs::exists(fileName)) {
+        cout << "This File already exists, due to want to replace it, 1 for Yes else 0: ";
+        cin >> flag;
+        
+        // Invalid Input
+        if (flag != 0 && flag != 1) {
+            cout << "Invalid Input given.";
+            return 0;
+        }
+    }
+    
+    // After Input
+    if (!fs::exists(filePath) || flag) {
+        ofstream myfile(ps);
+        if(myfile.is_open()) {
+            myfile << "File Content";
+            cout << "File Made";
+            myfile.close();
+        }
+        else
+        cout << "Error 404";
+    }
+    else
+    cout << "Please Rename the File";
+    
+    return 0;
+}
