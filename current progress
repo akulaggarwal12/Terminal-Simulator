@@ -16,7 +16,7 @@ int main()
     cout << "\n3. Delete File";
     cout << "\n4. Rename File";
     cout << "\n5. List Directory";
-     cout << "\n6. Move file";
+    cout << "\n6. Move file";
     cout << "\n7. Exit";
     cout << "\nEnter choice: ";
 
