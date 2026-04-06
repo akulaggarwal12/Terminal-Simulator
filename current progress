@@ -61,7 +61,7 @@ int main()
                 myfile.close();
                 }
                 else
-                    cout<<"Error in opening file!";
+                    cout<<"Error in opening the file!";
                 }
                 ;
             break;
