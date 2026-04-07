@@ -2,13 +2,37 @@
 #include <iostream>
 #include <filesystem>
 #include <fstream>
+#include <sstream>
 #include <vector>
 #include <string>
-#include <algorithm>
 namespace fs = std::filesystem;
+
+int touch_file(std::stringstream &ss, fs :: path currentpath){
+    std::string file_name;
+    ss >> file_name ;
+    if(file_name.empty()){
+        std::cout << "no filename in input\n";
+        return -1;
+    }
+    else {
+        currentpath = currentpath/file_name;
+        
+        if (!fs::exists(currentpath)) {
+            std::ofstream outFile(currentpath, std::ios::app);
+            if(outFile.is_open()) {
+                outFile << "File Content";
+                std::cout << "File Made";
+                outFile.close();
+            }
+            return 1;
+        }
+        return 0;
+    }
+}
 
 // Virtual Terminal
 void Graphics() {
+    fs::path currentpath = fs::current_path();
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
     InitWindow(1000 ,800 , "AETHER");
     SetWindowMinSize(400, 300);
@@ -16,16 +40,17 @@ void Graphics() {
     
     std::string input = "";
     std::vector<std::string> output;
+    int flag = 2;
     
     while (!WindowShouldClose()) {
     
         int screen_width = GetScreenWidth();
         int screen_height = GetScreenHeight();
         
-        int key = GetKeyPressed();
+        int key = GetCharPressed();
         
         while (key > 0) {
-            if (key >= 32 && key <= 122)
+            if (key >= 32 && key <= 125)
                 input += (char)key;
             key = GetCharPressed();
         }
@@ -37,18 +62,45 @@ void Graphics() {
         // Entering
         if (IsKeyPressed(KEY_ENTER)) {
             output.push_back("user@TechnOS:~ $ " + input);
+            std::stringstream ss(input);
+            std::string cmd;
+            ss >> cmd;
+            
+            if (cmd == "touch") {
+                flag = touch_file(ss, currentpath);
+                std::cout << flag << std::endl;
+            }
             input = "";
         }
+        
+        //Back Button
+        Vector2 mouse_pos = GetMousePosition();
+        Vector2 centre = {30.0, 20.0};
+        if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+            if (CheckCollisionPointCircle(mouse_pos, centre, 15.0)) {
+                currentpath = currentpath.parent_path();
+            }
+        }
+        
         
         BeginDrawing();
             ClearBackground(RAYWHITE);
             DrawRectangle(0, 0, screen_width, 40, GRAY);
+            DrawText(currentpath.c_str(), 60, 10, 20, BLACK);
             DrawCircle(30, 20, 15.0, BLACK);
             DrawText("<", 25, 7, 30, LIGHTGRAY);
             
             int y = 50;
             for (int i = 0; i < output.size(); i++) {
                 DrawText(output[i].c_str(), 20, y, 20, VIOLET);
+                y += 20;
+            }
+            if (flag == 0) {
+                DrawText("File already exists, please rename it.", 20, y, 20, ORANGE);
+                y += 20;
+            }
+            else if (flag == -1) {
+                DrawText("Please provide a file name.", 20, y, 20, ORANGE);
                 y += 20;
             }
             
@@ -61,9 +113,6 @@ void Graphics() {
 
 int main () {
     std::string root_path;
-    std::cout << "Enter the Root Path: ";
-    std::cin >> root_path;
     Graphics();
-    
     return 0;
 }
