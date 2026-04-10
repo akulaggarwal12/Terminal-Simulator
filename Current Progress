@@ -29,6 +29,49 @@ int touch_file(std::stringstream &ss, fs :: path currentpath){
         return 0;
     }
 }
+// Renaming a File
+int rename_file (std::stringstream &ss, fs::path currentpath) {
+    std::string old_name, new_name;
+    
+    ss >> std::quoted(old_name);
+    ss >> std::quoted(new_name);
+    if(old_name.empty() || new_name.empty()){
+        std::cout << "no filename in input\n";
+        return 2;
+    }
+    fs::path oldpath = currentpath/old_name;
+    fs::path newpath = currentpath/new_name;
+    
+    if (fs::exists(oldpath)) {
+        if (!fs::exists(newpath)) {
+            std::error_code ec;
+            fs::rename(oldpath, newpath,ec);
+            return 1;
+        }
+        else return 4;
+    }    
+    else return 3;
+}
+
+// Changing the Directory
+int change_dir(std::stringstream &ss, fs::path *currentpath) {
+    std::string dir_name;
+    
+    ss >> std::quoted(dir_name);
+    if(dir_name.empty()){
+        std::cout << "no directory name in input\n";
+        return 2;
+    }
+    else {
+        fs::path dirpath = *currentpath/dir_name;
+        if (fs::exists(dirpath)) {
+            *currentpath = dirpath;
+            return 1;
+        }
+        else 
+        return 3;
+    }
+}
 
 // Virtual Terminal
 void Graphics() {
@@ -80,8 +123,21 @@ void Graphics() {
             if (CheckCollisionPointCircle(mouse_pos, centre, 15.0)) {
                 currentpath = currentpath.parent_path();
             }
-        }
-        
+        }    
+        // reset 
+        input = "" ;
+             if (flag == 2){
+                std :: string msg = "(no filename or dorectory name in input)";
+                history.push_back({msg, SKYBLUE});
+            }
+            else if (flag == 3) {
+                std::string msg = "(Given File / Directory Doesn't Exists.)";
+                history.push_back({msg, SKYBLUE});
+            }
+            else if (flag == 4) {
+                std::string msg = "(New File Name Already Exists.)";
+                history.push_back({msg, SKYBLUE});
+            }
         
         BeginDrawing();
             ClearBackground(RAYWHITE);
