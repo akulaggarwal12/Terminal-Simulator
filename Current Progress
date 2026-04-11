@@ -4,15 +4,17 @@
 #include <fstream>
 #include <sstream>
 #include <vector>
-#include <string>
+#include <iomanip>
 namespace fs = std::filesystem;
 
+// Creating a File
 int touch_file(std::stringstream &ss, fs :: path currentpath){
     std::string file_name;
-    ss >> file_name ;
+    
+    ss >> std::quoted(file_name);
     if(file_name.empty()){
         std::cout << "no filename in input\n";
-        return -1;
+        return 2;
     }
     else {
         currentpath = currentpath/file_name;
@@ -29,6 +31,7 @@ int touch_file(std::stringstream &ss, fs :: path currentpath){
         return 0;
     }
 }
+
 // Renaming a File
 int rename_file (std::stringstream &ss, fs::path currentpath) {
     std::string old_name, new_name;
@@ -53,6 +56,27 @@ int rename_file (std::stringstream &ss, fs::path currentpath) {
     else return 3;
 }
 
+// Opening the File
+int open_file(std::stringstream &ss, fs::path currentpath) {
+    std::string file_name;
+    
+    ss>> std::quoted(file_name);
+    if(file_name.empty()){
+        std::cout << "no filename in input\n";
+        return 2;
+    }
+    else {
+        currentpath = currentpath/file_name;
+        
+        if (fs::exists(currentpath)) {
+            std::string command = "xdg-open \"" + currentpath.string() + "\" &";
+            system(command.c_str());
+            return 1;
+        }
+        return 3;
+    }
+}
+
 // Changing the Directory
 int change_dir(std::stringstream &ss, fs::path *currentpath) {
     std::string dir_name;
@@ -73,24 +97,102 @@ int change_dir(std::stringstream &ss, fs::path *currentpath) {
     }
 }
 
+// Make Directory
+int make_dir (std::stringstream &ss, fs::path currentpath) {
+    std::string dir_name;
+    
+    ss >> std::quoted(dir_name);
+    if (dir_name.empty()) {
+        std::cout << "no directory name in input\n";
+        return 2;
+    }
+    else {
+        currentpath = currentpath/dir_name;
+        if (fs::exists(currentpath))
+        return 0;
+        else {
+            fs::create_directories(currentpath);
+            return 1;
+        }
+    }
+}
+
+// Removing the File / Directory
+int remove (std::stringstream &ss, fs::path currentpath) {
+    std::string content;
+    
+    ss >> std::quoted(content);
+    if (content.empty()) {
+        std::cout << "no directory name in input\n";
+        return 2;
+    }
+    else {
+        currentpath = currentpath/content;
+        if (!fs::exists(currentpath))
+        return 3;
+        else {
+            uintmax_t del_count = fs::remove_all(currentpath);
+            return 5;
+        }
+    }
+}
+
+// List Data
+int list (fs::path currentpath, std::vector<std::string> &data_list) {
+    data_list.clear();
+    for (const auto& entry : fs::directory_iterator(currentpath)) {
+        data_list.push_back(std::string (entry.path().filename().string() , entry.is_directory()));
+    }
+    return 6;
+}
+
+
 // Virtual Terminal
-void Graphics() {
-    fs::path currentpath = fs::current_path();
-    SetConfigFlags(FLAG_WINDOW_RESIZABLE);
-    InitWindow(1000 ,800 , "AETHER");
-    SetWindowMinSize(400, 300);
+void Graphics(fs::path currentpath) {
+    int screen_width = 1400, screen_height = 800;
+    InitWindow(screen_width ,screen_height , "AETHER");
+    
     SetTargetFPS(60);
     
     std::string input = "";
     std::vector<std::string> output;
-    int flag = 2;
+    int flag = -1;
     
+    // Textures Adjustment
+        Image image = LoadImage("Image1.png");
+        
+        ImageResize(&image,screen_width, screen_height - 40);
+       
+        Texture2D background = LoadTextureFromImage(image);
+        
+        UnloadImage(image);
+        
+        std::vector<std::string> data_list;
+    
+    // Graphics:
     while (!WindowShouldClose()) {
     
-        int screen_width = GetScreenWidth();
-        int screen_height = GetScreenHeight();
+        screen_width = GetScreenWidth();
+        screen_height = GetScreenHeight();
+        
+        DrawTexture(background, 0, 40, RAYWHITE);
         
         int key = GetCharPressed();
+        
+        
+        
+        // Toggle Full Screen
+        if (IsKeyPressed (KEY_F11)) {
+        
+            ToggleFullscreen();
+            screen_width = GetScreenWidth();
+            screen_height = GetScreenHeight();
+            
+            image = LoadImage("Image1.png");
+            ImageResize(&image,screen_width, screen_height - 40);
+            background = LoadTextureFromImage(image);
+            UnloadImage(image);
+        }
         
         while (key > 0) {
             if (key >= 32 && key <= 125)
@@ -109,10 +211,45 @@ void Graphics() {
             std::string cmd;
             ss >> cmd;
             
+            // Command Rule Book
             if (cmd == "touch") {
                 flag = touch_file(ss, currentpath);
                 std::cout << flag << std::endl;
             }
+            else if (cmd == "rename") {
+                flag = rename_file(ss, currentpath);
+                std::cout << flag << std::endl;
+            }
+            else if (cmd == "open") {
+                flag = open_file(ss, currentpath);
+                std::cout << flag << std::endl;
+            }
+            else if (cmd == "cd") {
+                flag = change_dir(ss, &currentpath);
+                std::cout << flag << std::endl;
+            }
+            else if (cmd == "mkdir") {
+                flag = make_dir(ss, currentpath);
+                std::cout << flag << std::endl;
+            }
+            else if (cmd == "del") {
+                flag = remove(ss, currentpath);
+                std::cout << flag << std::endl;
+            }
+            else if (cmd == "ls") {
+                flag = list (currentpath, data_list);
+                std::cout << flag << std::endl;
+            }
+            else if (cmd == "help") {
+                flag = 7;
+                std::cout << flag << std::endl;
+            }
+            else {
+                flag = 8;
+                std::cout << flag << std::endl;
+            }
+            
+            // Reset
             input = "";
         }
         
@@ -120,47 +257,89 @@ void Graphics() {
         Vector2 mouse_pos = GetMousePosition();
         Vector2 centre = {30.0, 20.0};
         if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
-            if (CheckCollisionPointCircle(mouse_pos, centre, 15.0)) {
+            if (CheckCollisionPointCircle(mouse_pos, centre, 15.0))
                 currentpath = currentpath.parent_path();
-            }
-        }    
-        // reset 
-        input = "" ;
-             if (flag == 2){
-                std :: string msg = "(no filename or dorectory name in input)";
-                history.push_back({msg, SKYBLUE});
-            }
-            else if (flag == 3) {
-                std::string msg = "(Given File / Directory Doesn't Exists.)";
-                history.push_back({msg, SKYBLUE});
-            }
-            else if (flag == 4) {
-                std::string msg = "(New File Name Already Exists.)";
-                history.push_back({msg, SKYBLUE});
-            }
+        }
+        
         
         BeginDrawing();
             ClearBackground(RAYWHITE);
+            
+            // Ribbon 
             DrawRectangle(0, 0, screen_width, 40, GRAY);
             DrawText(currentpath.c_str(), 60, 10, 20, BLACK);
+            DrawText("Press F11 For Fullscreen Toggle", screen_width - MeasureText("Press F11 For Fullscreen Toggle", 20) - 15, 10, 20, BLACK);
+            
+            // Back Button
             DrawCircle(30, 20, 15.0, BLACK);
             DrawText("<", 25, 7, 30, LIGHTGRAY);
             
+            // Previous Commands
             int y = 50;
             for (int i = 0; i < output.size(); i++) {
                 DrawText(output[i].c_str(), 20, y, 20, VIOLET);
                 y += 20;
             }
+            
+            // Flags for Different Commands
             if (flag == 0) {
-                DrawText("File already exists, please rename it.", 20, y, 20, ORANGE);
+                DrawText("(Given File / Directory Already Exists.)", 20, y, 15, SKYBLUE);
                 y += 20;
             }
-            else if (flag == -1) {
-                DrawText("Please provide a file name.", 20, y, 20, ORANGE);
+            else if (flag == 2) {
+                DrawText("(Given Command Is Incomplete.)", 20, y, 15, SKYBLUE);
+                y += 20;
+            }
+            else if (flag == 3) {
+                DrawText("(Given File / Directory Doesn't Exists.)", 20, y, 15, SKYBLUE);
+                y += 20;
+            }
+            else if (flag == 4) {
+                DrawText("(New File Name Already Exists.)", 20, y, 15, SKYBLUE);
+                y += 20;
+            }
+            else if (flag == 5) {
+                DrawText("(Items Have Been Deleted)", 20, y, 15, SKYBLUE);
+                y += 20;    
+            }
+            else if (flag == 6) {
+                int fontx = 20;
+                int fontlen;
+                for (int i = 0; i < data_list.size(); i++) {
+                    fontlen = MeasureText(data_list[i].c_str(), 20);
+                    if (fs::is_directory(currentpath/data_list[i])) {
+                        if (fontlen < 150)
+                            DrawText(data_list[i].c_str(), fontx, y, 20, DARKBLUE);
+                        else
+                            DrawText(TextFormat("%.*s...", 11, data_list[i].c_str()), fontx, y, 20, DARKBLUE);
+                    }
+                    else {
+                        if (fontlen < 150)
+                            DrawText(data_list[i].c_str(), fontx, y, 20, SKYBLUE);
+                        else
+                            DrawText(TextFormat("%.*s...", 11, data_list[i].c_str()), fontx, y, 20, SKYBLUE);
+                    }
+                    
+                    fontx += 160;
+                    if (fontx > screen_width - 150) {
+                        fontx = 20;
+                        y += 20;
+                    }
+                }
+                y += 20;
+            }
+            else if (flag == 7) {
+                DrawText("Available Commands are: \n1 - touch filename :: Create the file\n2 - rename oldname newname :: Renaming the file / Folder\n3 - open filename :: Opening the file\n4 - cd directoryname :: Change the Directory\n5 - mkdir directoryname :: Create Directory\n7 - del name :: Deleting File / Folder\n8 - ls :: List of files and folders\n9 - help :: Shows all available commands", 20, y, 20, SKYBLUE);
+                y += 20 * 10;
+            }
+            else if (flag == 8) {
+                DrawText("(Invalid Command Given.)", 20, y, 20, SKYBLUE);
                 y += 20;
             }
             
-            DrawText(("user@TechnOS:~ $ " + input).c_str(), 20, y + 10, 20, BLACK);
+            // New Line
+            DrawText("user@TechnOS:~ $ ", 20, y + 10, 20, ORANGE);
+            DrawText((input).c_str(), 20 + MeasureText("user@TechnOS:~ $ ", 20) + 10, y + 10, 20, GREEN);
         EndDrawing();
     }
     CloseWindow();
@@ -168,7 +347,7 @@ void Graphics() {
 
 
 int main () {
-    std::string root_path;
-    Graphics();
+    fs::path root_path = fs::current_path();
+    Graphics(root_path);
     return 0;
 }
