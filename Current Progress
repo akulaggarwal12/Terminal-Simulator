@@ -145,7 +145,46 @@ int list (fs::path currentpath, std::vector<std::string> &data_list) {
     }
     return 6;
 }
-
+// Gedit the File
+int gedit_file (std::stringstream &ss, fs::path currentpath) {
+    std::string file_name;
+    
+    ss>> std::quoted(file_name);
+    if(file_name.empty()){
+        std::cout << "no filename in input\n";
+        return 2;
+    }
+    else {
+        currentpath = currentpath/file_name;
+        
+        if (fs::exists(currentpath)) {
+            std::string command = "gedit \"" + currentpath.string() + "\" &";
+            system(command.c_str());
+            return 1;
+        }
+        return 3;
+    }
+}
+// Nano the File
+int nano_file (std::stringstream &ss, fs::path currentpath) {
+    std::string file_name;
+    
+    ss>> std::quoted(file_name);
+    if(file_name.empty()){
+        std::cout << "no filename in input\n";
+        return 2;
+    }
+    else {
+        currentpath = currentpath/file_name;
+        
+        if (fs::exists(currentpath)) {
+            std::string command = "nano \"" + currentpath.string() + "\" &";
+            system(command.c_str());
+            return 1;
+        }
+        return 3;
+    }
+}
 
 // Virtual Terminal
 void Graphics(fs::path currentpath) {
@@ -242,6 +281,14 @@ void Graphics(fs::path currentpath) {
             }
             else if (cmd == "help") {
                 flag = 7;
+                std::cout << flag << std::endl;
+            }
+            else if (cmd == "gedit") {
+                flag = gedit_file(ss, currentpath);
+                std::cout << flag << std::endl;
+            }
+            else if (cmd == "nano") {
+                flag = nano_file(ss, currentpath);
                 std::cout << flag << std::endl;
             }
             else {
