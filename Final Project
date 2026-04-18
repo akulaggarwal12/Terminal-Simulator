@@ -382,7 +382,7 @@ void Graphics(fs::path currentpath) {
             screen_width = GetScreenWidth();
             screen_height = GetScreenHeight();
             
-            image = LoadImage("Image3.png");
+            image = LoadImage("Image.png");
             ImageResize(&image,screen_width, screen_height - 40);
             background = LoadTextureFromImage(image);
             UnloadImage(image);
