@@ -5,7 +5,15 @@
 #include <sstream>
 #include <vector>
 #include <iomanip>
+#include <string>
 namespace fs = std::filesystem;
+
+// Terminal History Class
+class Terminal {
+    public:
+        std::string text;
+        Color color;
+};
 
 // Creating a File
 int touch_file(std::stringstream &ss, fs :: path currentpath){
@@ -92,7 +100,6 @@ int change_dir(std::stringstream &ss, fs::path *currentpath) {
             *currentpath = dirpath;
             return 1;
         }
-        else 
         return 3;
     }
 }
@@ -138,13 +145,22 @@ int remove (std::stringstream &ss, fs::path currentpath) {
 }
 
 // List Data
-int list (fs::path currentpath, std::vector<std::string> &data_list) {
+int list (fs::path currentpath, std::vector<std::string> &data_list, std::vector<std::string> &dir_list, std::vector<std::string> &file_list) {
     data_list.clear();
+    dir_list.clear();
+    file_list.clear();
     for (const auto& entry : fs::directory_iterator(currentpath)) {
-        data_list.push_back(std::string (entry.path().filename().string() , entry.is_directory()));
+        data_list.push_back(entry.path().filename().string());
+    }
+    for (std::string data : data_list) {
+        if (fs::is_directory(currentpath/data))
+            dir_list.push_back(data);
+        else
+            file_list.push_back(data);
     }
     return 6;
 }
+
 // Gedit the File
 int gedit_file (std::stringstream &ss, fs::path currentpath) {
     std::string file_name;
@@ -165,6 +181,7 @@ int gedit_file (std::stringstream &ss, fs::path currentpath) {
         return 3;
     }
 }
+
 // Nano the File
 int nano_file (std::stringstream &ss, fs::path currentpath) {
     std::string file_name;
@@ -186,39 +203,177 @@ int nano_file (std::stringstream &ss, fs::path currentpath) {
     }
 }
 
+
+// Double Tab Listing Data
+int tab_list(fs::path currentpath, std::vector<std::string> &names, std::vector<std::string> &data_list, std::vector<std::string> &dir_list, std::vector<std::string> &file_list) {
+    data_list.clear();
+    dir_list.clear();
+    file_list.clear();
+    for (std::string data : names) {
+        if (fs::is_directory(currentpath/data))
+            dir_list.push_back(data);
+        else
+            file_list.push_back(data);
+    }
+    return 6;
+}
+
+// Tab Function
+int tab_func (std::string &input, fs::path currentpath, bool double_press, std::vector<std::string> &data_list, std::vector<std::string> &dir_list, std::vector<std::string> &file_list) {
+    std::stringstream ss(input);
+    std::string word, output = "";
+    std::vector<std::string> words, names;
+    
+    if (input.length() <= 0) return 1;
+    
+    else if (input[input.length() - 1] == ' ' && double_press)
+        return list (currentpath, data_list, dir_list, file_list);
+    
+    while (ss >> word)
+        words.push_back(word);
+        
+    for (const auto& entry : fs::directory_iterator(currentpath)) {
+        if (!entry.path().filename().string().find(words[words.size() - 1], 0))
+            names.push_back(entry.path().filename().string());
+    }
+    
+    if (!double_press) {
+        if (names.size() == 1) {
+            words[words.size() - 1] = names[0];
+            for (std::string str : words) {
+                output += str;
+                if (str != words[words.size() - 1])
+                    output += " ";
+            }
+            input = output;
+        }
+        else if (names.size()) {
+            int n = names[0].length();
+            for (int i = 1; i < names.size(); i++) {
+                int m = 0;
+                while (m < names[0].length() && m < names[i].length() && names[0][m] == names[i][m])
+                    m ++;
+                n = std::min(n, m);
+                if (n == 1)
+                    break;
+            }
+            words[words.size() - 1] = names[0].substr(0, n);
+            for (std::string str : words) {
+                output += str;
+                if (str != words[words.size() - 1])
+                    output += " ";
+            }
+            input = output;
+        }
+        return 1;
+    }
+    else if (double_press) {
+        return tab_list(currentpath, names, data_list, dir_list, file_list);
+    }
+    return 1;
+}
+
+// Move File
+int move_file (std::stringstream &ss, fs::path currentpath) {
+    std::string file_name, dest;
+    ss >> std::quoted(file_name);
+    if(file_name.empty()){
+        std::cout << "no filename in input\n";
+        return 2;
+    }
+    ss >> std::quoted(dest);
+    fs::path destpath = dest;
+    if (!fs::is_directory(destpath))
+        return 3;
+    currentpath = currentpath / file_name;
+    destpath = destpath / file_name;
+    fs::rename (currentpath, destpath);
+    return 1;
+}
+
+// Copy File
+int copy_file (std::stringstream &ss, fs::path currentpath) {
+    std::string file_name, dest;
+    ss >> std::quoted(file_name);
+    if(file_name.empty()){
+        std::cout << "no filename in input\n";
+        return 2;
+    }
+    ss >> std::quoted(dest);
+    fs::path destpath = dest;
+    if (!fs::is_directory(destpath))
+        return 3;
+    currentpath = currentpath / file_name;
+    destpath = destpath / file_name;
+    fs::copy_file (currentpath, destpath);
+    return 1;
+}
+
+// Duplicate File
+int duplicate_file (std::stringstream &ss, fs::path currentpath) {
+    std::string file_name, dest;
+    ss >> std::quoted(file_name);
+    if(file_name.empty()){
+        std::cout << "no filename in input\n";
+        return 2;
+    }
+    currentpath = currentpath / file_name;
+    std::string new_name = currentpath.stem().string() + "_copy" + currentpath.extension().string();
+    fs::path dest_path = currentpath;
+    dest_path.replace_filename(new_name);
+    fs::copy_file(currentpath, dest_path);
+    return 1;
+}
+
+
+
 // Virtual Terminal
 void Graphics(fs::path currentpath) {
+    static int maxy = 0;
     int screen_width = 1400, screen_height = 800;
     InitWindow(screen_width ,screen_height , "AETHER");
     
     SetTargetFPS(60);
     
+    double previous_press = 0.0;
+    bool double_press = false;
+    const double double_press_duration = 0.25;
+    
     std::string input = "";
-    std::vector<std::string> output;
+    std::vector<Terminal> history;
+    int cursor_pos = 0;
     int flag = -1;
+    bool auto_scroll = false;
+    float scroll_offset = 0.0f;
     
     // Textures Adjustment
-        Image image = LoadImage("Image1.png");
-        
-        ImageResize(&image,screen_width, screen_height - 40);
-       
-        Texture2D background = LoadTextureFromImage(image);
-        
-        UnloadImage(image);
-        
-        std::vector<std::string> data_list;
     
+    Image image = LoadImage("Image3.png");
+        
+    ImageResize(&image,screen_width, screen_height - 40);
+       
+    Texture2D background = LoadTextureFromImage(image);
+        
+    UnloadImage(image);
+    
+    std::vector<std::string> data_list;
+    std::vector<std::string> dir_list;
+    std::vector<std::string> file_list;
+    std::vector<std::string> cmd_history;
+        
+        
     // Graphics:
     while (!WindowShouldClose()) {
     
         screen_width = GetScreenWidth();
         screen_height = GetScreenHeight();
-        
+    
         DrawTexture(background, 0, 40, RAYWHITE);
         
+        
         int key = GetCharPressed();
-        
-        
+        int y;
+        int wheel = (int)GetMouseWheelMove();
         
         // Toggle Full Screen
         if (IsKeyPressed (KEY_F11)) {
@@ -227,25 +382,65 @@ void Graphics(fs::path currentpath) {
             screen_width = GetScreenWidth();
             screen_height = GetScreenHeight();
             
-            image = LoadImage("Image1.png");
+            image = LoadImage("Image3.png");
             ImageResize(&image,screen_width, screen_height - 40);
             background = LoadTextureFromImage(image);
             UnloadImage(image);
         }
         
+        // Tab Key Functioning
+        if (IsKeyPressed (KEY_TAB)) {
+            double current_press = GetTime();
+            if (current_press - previous_press <= double_press_duration) {
+                double_press = true;
+                previous_press = 0;
+            }
+            else {
+                double_press = false;
+                previous_press = current_press;
+            }
+            flag = tab_func(input, currentpath, double_press, data_list, dir_list, file_list);
+            cursor_pos = input.length();
+            if (flag == 6) {
+                history.push_back({"user@TechnOS:~ $ " + input, VIOLET});
+                for (std::string data : dir_list)
+                    history.push_back({data, DARKBLUE});
+                for (std::string data : file_list)
+                    history.push_back({data, SKYBLUE});
+            }
+        }
+        
+        // Active Line
         while (key > 0) {
-            if (key >= 32 && key <= 125)
-                input += (char)key;
+            if (key >= 32 && key <= 125) {
+                input.insert(cursor_pos, 1, (char)key);
+                cursor_pos ++;
+                
+            }
             key = GetCharPressed();
+            auto_scroll = true;
         }
         
         // Deleting
-        if (IsKeyPressed(KEY_BACKSPACE) && !input.empty())
-            input.pop_back();
+        if ((IsKeyPressed(KEY_BACKSPACE) || IsKeyPressedRepeat(KEY_BACKSPACE)) && cursor_pos > 0) {
+            input.erase(cursor_pos - 1, 1);
+            cursor_pos--;
+        }
+        
+        // Cursor Movement
+        if ((IsKeyPressed(KEY_LEFT) || IsKeyPressedRepeat(KEY_LEFT)) && cursor_pos > 0)
+            cursor_pos--;
+        if ((IsKeyPressed(KEY_RIGHT) || IsKeyPressedRepeat(KEY_RIGHT)) && cursor_pos < input.length())
+            cursor_pos++;
+            
         
         // Entering
+        static int cmd_index;
         if (IsKeyPressed(KEY_ENTER)) {
-            output.push_back("user@TechnOS:~ $ " + input);
+            auto_scroll = true;
+            history.push_back({"user@TechnOS:~ $ " + input, VIOLET});
+            
+            cmd_history.push_back(input);
             std::stringstream ss(input);
             std::string cmd;
             ss >> cmd;
@@ -276,12 +471,16 @@ void Graphics(fs::path currentpath) {
                 std::cout << flag << std::endl;
             }
             else if (cmd == "ls") {
-                flag = list (currentpath, data_list);
+                flag = list (currentpath, data_list, dir_list, file_list);
                 std::cout << flag << std::endl;
             }
             else if (cmd == "help") {
                 flag = 7;
                 std::cout << flag << std::endl;
+            }
+            else if (cmd == "clear") {
+                flag = 1;
+                history.clear();
             }
             else if (cmd == "gedit") {
                 flag = gedit_file(ss, currentpath);
@@ -298,6 +497,96 @@ void Graphics(fs::path currentpath) {
             
             // Reset
             input = "";
+            cursor_pos = 0;
+            cmd_index = cmd_history.size();
+            
+            
+            // History Saving
+            if (flag == 0) {
+                std::string msg = "(Given File / Directory Already Exists.)";
+                history.push_back({msg, WHITE});
+            }
+            else if (flag == 2) {
+                std::string msg = "(Given Command Is Incomplete.)";
+                history.push_back({msg, WHITE});
+            }
+            else if (flag == 3) {
+                std::string msg = "(Given File / Directory Doesn't Exists.)";
+                history.push_back({msg, WHITE});
+            }
+            else if (flag == 4) {
+                std::string msg = "(New File Name Already Exists.)";
+                history.push_back({msg, WHITE});
+            }
+            else if (flag == 5) {
+                std::string msg = "(Items Have Been Deleted)";
+                history.push_back({msg, WHITE}); 
+            }
+            else if (flag == 6) {
+                for (std::string data : dir_list)
+                    history.push_back({data, DARKBLUE});
+                for (std::string data : file_list)
+                    history.push_back({data, SKYBLUE});
+            }
+            else if (flag == 7) {
+                std::vector<std::string> msg;
+                msg.push_back("Available Commands are: ");
+                msg.push_back("1 - touch filename");
+                msg.push_back(":: Create the file");
+                msg.push_back("2 - rename oldname newname");
+                msg.push_back(":: Renaming the file / Folder");
+                msg.push_back("3 - open filename");
+                msg.push_back(":: Opening the file");
+                msg.push_back("4 - gedit filename");
+                msg.push_back(":: Opening the file using gedit editor");
+                msg.push_back("5 - nano filename");
+                msg.push_back(":: Opening the file using nano editor");
+                msg.push_back("6 - cd directoryname");
+                msg.push_back(":: Change the Directory");
+                msg.push_back("7 - mkdir directoryname");
+                msg.push_back(":: Create Directory");
+                msg.push_back("8 - del name");
+                msg.push_back(":: Deleting File / Folder");
+                msg.push_back("9 - ls");
+                msg.push_back(":: List of files and folders");
+                msg.push_back("10 - help");
+                msg.push_back(":: Shows all available commands");
+                msg.push_back("11 - clear");
+                msg.push_back(":: Clear all the previous results");
+                msg.push_back("12 - dup name");
+                msg.push_back(":: Copy the File or Directory in same Parent path");
+                msg.push_back("13 - copy name destination");
+                msg.push_back(":: Copies the File or Directory to the destination Path");
+                msg.push_back("14 - move name destination");
+                msg.push_back(":: Cut the File or Directory to the destination Path");
+                for (int i = 0; i < msg.size(); i++)
+                    history.push_back({msg[i], YELLOW});
+            }
+            else if (flag == 8) {
+                std::string msg = "(Command Invalid.)";
+                history.push_back({msg, WHITE});
+            }
+        }
+        
+        
+        // Command History
+        if (IsKeyPressed(KEY_UP) && cmd_index > 0) {
+            cmd_index --;
+            auto_scroll = true;
+            input = cmd_history[cmd_index];
+            cursor_pos = input.length();
+        }
+        if (IsKeyPressed(KEY_DOWN) && cmd_index < cmd_history.size()) {
+            cmd_index ++;
+            auto_scroll = true;
+            if (cmd_index == cmd_history.size()) {
+                input = "";
+                cursor_pos = 0;
+            }
+            else {
+                input = cmd_history[cmd_index];
+                cursor_pos = input.length();
+            }
         }
         
         //Back Button
@@ -308,10 +597,70 @@ void Graphics(fs::path currentpath) {
                 currentpath = currentpath.parent_path();
         }
         
+        // Auto Scrolling
+        if (auto_scroll) {
+        
+            int calc_y = 50; 
+            int fontx = 20;
+            
+            for (int i = 0; i < history.size(); i++) {
+                if (ColorToInt(history[i].color) == ColorToInt(SKYBLUE) || ColorToInt(history[i].color) == ColorToInt(DARKBLUE)) {
+                    if (i > 0 && ColorToInt(history[i - 1].color) == ColorToInt(VIOLET))
+                        fontx = 20;
+                    if (fontx > screen_width - 150) {
+                        fontx = 20;
+                        calc_y += 20;
+                    }
+                    fontx += 160;
+                    if (i + 1 == history.size() || ColorToInt(history[i + 1].color) == ColorToInt(VIOLET))
+                        calc_y += 25;
+                }
+                else if (ColorToInt(history[i].color) == ColorToInt(YELLOW)) {
+                    calc_y += 20;
+                    for (int j = 1; j <= 28; j += 2)
+                        calc_y += 20;
+                    
+                    i += 28;
+                    if (i + 1 == history.size() || ColorToInt(history[i + 1].color) == ColorToInt(VIOLET))
+                        calc_y += 5;
+                }
+                else {
+                    if (i + 1 < history.size() && ColorToInt(history[i + 1].color) == ColorToInt(VIOLET))
+                        calc_y += 25;
+                    else
+                        calc_y += 20;
+                }
+            }
+            
+            calc_y += 25;
+            maxy = calc_y;
+            
+            int autoscroll = screen_height - 50 - maxy;
+            if (autoscroll < 0) {
+                scroll_offset = autoscroll;
+            }
+            auto_scroll = false;
+        }
         
         BeginDrawing();
-            ClearBackground(RAYWHITE);
+        
+            ClearBackground(BLACK);
             
+            // Scrolling
+            int maxscroll = 0;
+            int minscroll = screen_height - 50 - maxy;
+            if (maxy + 50 > screen_height) {
+                scroll_offset += wheel * 40;
+                if (scroll_offset > maxscroll)
+                    scroll_offset = maxscroll;
+                else if (scroll_offset < minscroll)
+                    scroll_offset = minscroll;
+            }
+            else 
+                scroll_offset = 0;
+                
+            y = scroll_offset + 50;
+        
             // Ribbon 
             DrawRectangle(0, 0, screen_width, 40, GRAY);
             DrawText(currentpath.c_str(), 60, 10, 20, BLACK);
@@ -321,72 +670,69 @@ void Graphics(fs::path currentpath) {
             DrawCircle(30, 20, 15.0, BLACK);
             DrawText("<", 25, 7, 30, LIGHTGRAY);
             
-            // Previous Commands
-            int y = 50;
-            for (int i = 0; i < output.size(); i++) {
-                DrawText(output[i].c_str(), 20, y, 20, VIOLET);
-                y += 20;
-            }
+            BeginScissorMode(0, 50, screen_width, screen_height - 50);
             
-            // Flags for Different Commands
-            if (flag == 0) {
-                DrawText("(Given File / Directory Already Exists.)", 20, y, 15, SKYBLUE);
-                y += 20;
-            }
-            else if (flag == 2) {
-                DrawText("(Given Command Is Incomplete.)", 20, y, 15, SKYBLUE);
-                y += 20;
-            }
-            else if (flag == 3) {
-                DrawText("(Given File / Directory Doesn't Exists.)", 20, y, 15, SKYBLUE);
-                y += 20;
-            }
-            else if (flag == 4) {
-                DrawText("(New File Name Already Exists.)", 20, y, 15, SKYBLUE);
-                y += 20;
-            }
-            else if (flag == 5) {
-                DrawText("(Items Have Been Deleted)", 20, y, 15, SKYBLUE);
-                y += 20;    
-            }
-            else if (flag == 6) {
-                int fontx = 20;
-                int fontlen;
-                for (int i = 0; i < data_list.size(); i++) {
-                    fontlen = MeasureText(data_list[i].c_str(), 20);
-                    if (fs::is_directory(currentpath/data_list[i])) {
-                        if (fontlen < 150)
-                            DrawText(data_list[i].c_str(), fontx, y, 20, DARKBLUE);
-                        else
-                            DrawText(TextFormat("%.*s...", 11, data_list[i].c_str()), fontx, y, 20, DARKBLUE);
-                    }
-                    else {
-                        if (fontlen < 150)
-                            DrawText(data_list[i].c_str(), fontx, y, 20, SKYBLUE);
-                        else
-                            DrawText(TextFormat("%.*s...", 11, data_list[i].c_str()), fontx, y, 20, SKYBLUE);
-                    }
-                    
-                    fontx += 160;
+            // Output Previous Commands and Results
+            int fontx = 20;
+            for (int i = 0; i < history.size(); i++) {
+                int fontsize = (ColorToInt(history[i].color) == ColorToInt(VIOLET)) ? 20 : 15;
+                
+                if (ColorToInt(history[i].color) == ColorToInt(SKYBLUE) || ColorToInt(history[i].color) == ColorToInt(DARKBLUE)) {
+                    if (ColorToInt(history[i - 1].color) == ColorToInt(VIOLET))
+                        fontx = 20;
                     if (fontx > screen_width - 150) {
                         fontx = 20;
                         y += 20;
                     }
+                    int fontlen = MeasureText(history[i].text.c_str(), fontsize);
+                    
+                    if (fontlen < 150)
+                        DrawText(history[i].text.c_str(), fontx, y, fontsize, history[i].color);
+                    else
+                        DrawText(TextFormat("%.*s...", 11, history[i].text.c_str()), fontx, y, fontsize, history[i].color);
+                    
+                    fontx += 160;
+                    if (i + 1 == history.size() || ColorToInt(history[i + 1].color) == ColorToInt(VIOLET))
+                        y += 25;
                 }
-                y += 20;
-            }
-            else if (flag == 7) {
-                DrawText("Available Commands are: \n1 - touch filename :: Create the file\n2 - rename oldname newname :: Renaming the file / Folder\n3 - open filename :: Opening the file\n4 - cd directoryname :: Change the Directory\n5 - mkdir directoryname :: Create Directory\n7 - del name :: Deleting File / Folder\n8 - ls :: List of files and folders\n9 - help :: Shows all available commands", 20, y, 20, SKYBLUE);
-                y += 20 * 10;
-            }
-            else if (flag == 8) {
-                DrawText("(Invalid Command Given.)", 20, y, 20, SKYBLUE);
-                y += 20;
+                else if (ColorToInt(history[i].color) == ColorToInt(YELLOW)) {
+                    DrawText(history[i].text.c_str(), 20, y, fontsize, history[i].color);
+                    y += 20;
+                    for (int j = 1; j <= 28; j += 2) {
+                        DrawText(history[i + j].text.c_str(), 20, y, fontsize, history[i + j].color);
+                        DrawText(history[i + j + 1].text.c_str(), 300, y, fontsize, history[i + j + 1].color);
+                        y += 20;
+                    }
+                    i += 28;
+                    if (i + 1 == history.size() || ColorToInt(history[i + 1].color) == ColorToInt(VIOLET))
+                        y += 5;
+                }
+                else {
+                    DrawText(history[i].text.c_str(), 20, y, fontsize, history[i].color);
+                    if (ColorToInt(history[i + 1].color) == ColorToInt(VIOLET))
+                        y += 25;
+                    else
+                        y += 20;
+                }
             }
             
+            
             // New Line
-            DrawText("user@TechnOS:~ $ ", 20, y + 10, 20, ORANGE);
-            DrawText((input).c_str(), 20 + MeasureText("user@TechnOS:~ $ ", 20) + 10, y + 10, 20, GREEN);
+            int inputX = 20 + MeasureText("user@TechnOS:~ $ ", 20) + 10;
+            DrawText("user@TechnOS:~ $ ", 20, y, 20, ORANGE);
+            DrawText(input.c_str(), inputX, y, 20, GREEN);
+            
+            // Blinking Cursor Logic
+            if (((int)(GetTime() * 2)) % 2 == 0) {
+                int cursorX = inputX + MeasureText(input.substr(0, cursor_pos).c_str(), 20);
+                DrawText("|", cursorX, y, 20, DARKGREEN);
+            }
+            y += 25;
+            maxy = y - (int)scroll_offset;
+            
+            
+        
+        EndScissorMode();
         EndDrawing();
     }
     CloseWindow();
