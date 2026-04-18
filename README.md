@@ -1,73 +1,67 @@
-# Aether - File Explorer Simulator
+# IC Project: System-Integrated Terminal Emulator
 
-## About The Project
-Aether is a visual, Terminal Simulator built entirely in C/C++. Utilizing the Raylib library for rendering, this project provides a graphical user interface (GUI) to navigate and interact with file directories. It simulates a virtual terminal environment where users can type commands to do various different tasks that are generally used for files or directories in real-time.
+This repository contains the source code for **IC Project**, a professional-grade terminal emulator developed in C++ using the Raylib framework. The project focuses on bridging graphical user interfaces with low-level system command execution.
 
-## Features
-* **Graphical Interface:** Built completely from scratch using Raylib.
-* **Interactive Window:** Typing and modifying will be real time interaction.
-* **Path Tracking:** A live-updating address bar displaying the current directory path.
-* **Custom Assets:** Custom Background Wallpaper is attached which adjusts itself with fullscreen mode.
-* **Pure C/C++ Backend:** Efficient file and directory handling using standard C++ libraries.
+---
 
-## Built With
-* [C++](https://cplusplus.com/) - Core application logic and backend.
-* [Raylib](https://www.raylib.com/) - Rendering, window management, and input detection.
+## Technical Overview
 
-## Getting Started
+IC Project is designed to provide a stable, responsive command-line environment. It utilizes a virtual layout system to handle text rendering and command processing, ensuring that system-level operations are handled safely and efficiently.
 
-### Prerequisites
-To compile and run this project, you will need:
-* A C++ compiler (GCC, Clang, or MSVC)
-* [Raylib](https://github.com/raysan5/raylib) installed and configured on your system.
-* [CMake / Make] (Optional: specify your build system here)
+### Key Functional Components
 
-### Installation & Compilation
-1. Clone the repository:  
-   ```bash
-   git clone https://github.com/akulaggarwal12/Terminal-Simulator.git
-   ```
+* **System Command Integration**: The core of the project involves functions linked directly to system commands. This includes the implementation of specialized commands like `/xgh` and others handled through the `aether` namespace.
+* **Virtual Rendering Engine**: Implements a two-pass rendering logic. The first pass calculates the vertical bounds (`maxy`) of the terminal content, while the second pass renders the text. This prevents visual jitter during autoscrolling.
+* **Command Logic**:
+    * **Tab Completion**: A robust algorithm that identifies the longest common prefix for command and file suggestions.
+    * **Input Management**: Full support for mid-string editing, cursor movement, and command history retrieval.
+    * **Dynamic Layout**: Real-time adjustment of text wrapping and element positioning based on window dimensions.
 
+---
 
-2. Compiling the Project:
-Depending on your operating system and setup, choose the compilation method that works best for you.
+## Prerequisites
 
+To build and run this project, the following dependencies must be installed on your system:
 
-**Option A: Terminal Compilation (Linux)**
+* **C++ Compiler**: GCC (MinGW for Windows) or Clang, supporting C++17 or higher.
+* **Raylib**: Version 4.0 or later.
+* **Make** (Optional): For automated builds.
 
-Ensure you have Raylib installed system-wide, then run:
+---
+
+## Compilation and Build Instructions
+
+The project requires linking the Raylib library and including all relevant source modules. Use the following commands based on your operating system.
+
+### Using GCC (Linux/macOS)
 ```bash
-g++ main.cpp -o terminal -lraylib -lGL -lm -lpthread -ldl -lrt -lX11
+g++ main.cpp aether.cpp -o ic_project -lraylib -lGL -lm -lpthread -ldl -lrt -lX11
 ```
 
-
-**Option B: Terminal Compilation (Windows via MinGW)**
-
-Assuming you have the Raylib `include` and `lib` folders set up in your compiler path or project directory:
+### Using MinGW (Windows)
 ```bash
-g++ main.cpp -o terminal.exe -O2 -Wall -Wno-missing-braces -I include/ -L lib/ -lraylib -lopengl32 -lgdi32 -lwinmm
+g++ main.cpp aether.cpp -o ic_project.exe -lraylib -lgdi32 -lwinmm
 ```
 
+### Build Parameters
+| Flag | Description |
+| :--- | :--- |
+| `-lraylib` | Links the Raylib static/dynamic library. |
+| `aether.cpp` | Includes the core system command and `/xgh` logic. |
+| `-o` | Defines the output executable name. |
 
-**Option C: Terminal Compilation (macOS)**
+---
 
-Using Clang with Raylib installed via Homebrew (`brew install raylib`):
-```bash
-clang++ main.cpp -o terminal -std=c++17 -I/opt/homebrew/include -L/opt/homebrew/lib -lraylib -framework OpenGL -framework Cocoa -framework IOKit -framework CoreVideo
-```
+## Usage and Commands
 
+Once the executable is launched, the terminal accepts standard input. 
 
+1.  **System Commands**: Enter commands directly into the prompt.
+2.  **Special Commands**: Commands prefixed with `/` (such as `/xgh`) interface with the `aether` internal functions.
+3.  **Navigation**:
+    * **UP/DOWN**: Cycle through command history.
+    * **LEFT/RIGHT**: Move the cursor within the current line for editing.
+    * **TAB**: Trigger the autocompletion engine.
+    * **F11**: Toggle fullscreen mode.
 
-3. Run the Application
-Once compiled successfully, execute the generated file from your terminal to launch the simulator.
-
-
-**On Linux or macOS:**
-```bash
-./terminal
-```
-
-**On Windows:**
-```cmd
-terminal.exe
-```
+---
