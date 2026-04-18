@@ -35,19 +35,18 @@ The project requires linking the Raylib library and including all relevant sourc
 
 ### Using GCC (Linux/macOS)
 ```bash
-g++ main.cpp aether.cpp -o ic_project -lraylib -lGL -lm -lpthread -ldl -lrt -lX11
+g++ main.cpp -o ic_project -lraylib -lGL -lm -lpthread -ldl -lrt -lX11
 ```
 
 ### Using MinGW (Windows)
 ```bash
-g++ main.cpp aether.cpp -o ic_project.exe -lraylib -lgdi32 -lwinmm
+g++ main.cpp -o ic_project.exe -lraylib -lgdi32 -lwinmm
 ```
 
 ### Build Parameters
 | Flag | Description |
 | :--- | :--- |
 | `-lraylib` | Links the Raylib static/dynamic library. |
-| `aether.cpp` | Includes the core system command and `/xgh` logic. |
 | `-o` | Defines the output executable name. |
 
 ---
@@ -57,7 +56,7 @@ g++ main.cpp aether.cpp -o ic_project.exe -lraylib -lgdi32 -lwinmm
 Once the executable is launched, the terminal accepts standard input. 
 
 1.  **System Commands**: Enter commands directly into the prompt.
-2.  **Special Commands**: Commands prefixed with `/` (such as `/xgh`) interface with the `aether` internal functions.
+2.  **Special Commands**: Commands prefixed with `/` (such as `/xgh`) interface with the `aether` internal functions, made for linux, ubuntu distribution.
 3.  **Navigation**:
     * **UP/DOWN**: Cycle through command history.
     * **LEFT/RIGHT**: Move the cursor within the current line for editing.
