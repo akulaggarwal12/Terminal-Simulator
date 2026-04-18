@@ -64,3 +64,9 @@ Once the executable is launched, the terminal accepts standard input.
     * **F11**: Toggle fullscreen mode.
 
 ---
+
+## Custom Wallpaper
+
+We have built our custom wallpaper for the project as a symbol of our team, make sure the image is saved as "Image.png" and in the same parent file as the main.cpp.
+
+---
