@@ -47,6 +47,7 @@ g++ main.cpp -o ic_project.exe -lraylib -lgdi32 -lwinmm
 | Flag | Description |
 | :--- | :--- |
 | `-lraylib` | Links the Raylib static/dynamic library. |
+| `aether.cpp` | Includes the core sytem commands and /xgh logic. |
 | `-o` | Defines the output executable name. |
 
 ---
@@ -64,9 +65,16 @@ Once the executable is launched, the terminal accepts standard input.
     * **F11**: Toggle fullscreen mode.
 
 ---
+## Directory Structure 
 
-## Custom Wallpaper
+* `main.cpp` : Entry point and Raylib initialization loop.
+* `aether.cpp / aether.h` : Contains the system command link logic and /xgh function definitions.
+* `resources/` : (Optional) Directory for custom fonts or icons.
 
-We have built our custom wallpaper for the project as a symbol of our team, make sure the image is saved as "Image.png" and in the same parent file as the main.cpp.
+---
+
+## Implementation Details
+
+The system integration is achieved through the <cstdlib> library, allowing the emulator to pass strings directly to the host operating system's shell while maintaining a local state within the application for custom-defined commands. All internal logic is encapsulated within the aether namespace to prevent naming collisions with standard libraries. Also included a custom made Wallpaper for the project as a symbol for our team.
 
 ---
