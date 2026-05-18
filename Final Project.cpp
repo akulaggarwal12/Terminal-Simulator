@@ -1,11 +1,12 @@
-#include "raylib.h"
+#include "aether.hpp"   // Own Header File
+#include "raylib.h"     // Base for Graphics
 #include <iostream>
-#include <filesystem>
-#include <fstream>
-#include <sstream>
-#include <vector>
-#include <iomanip>
-#include <string>
+#include <filesystem>   // Base for File Management
+#include <fstream>      // For File Opening and some other functions
+#include <sstream>      // For File Opening and some other functions
+#include <vector>       
+#include <iomanip>      // For Multiwords file / directory names
+#include <string>       
 namespace fs = std::filesystem;
 
 // Terminal History Class
@@ -15,362 +16,53 @@ class Terminal {
         Color color;
 };
 
-// Creating a File
-int touch_file(std::stringstream &ss, fs :: path currentpath){
-    std::string file_name;
-    
-    ss >> std::quoted(file_name);
-    if(file_name.empty()){
-        std::cout << "no filename in input\n";
-        return 2;
-    }
-    else {
-        currentpath = currentpath/file_name;
-        
-        if (!fs::exists(currentpath)) {
-            std::ofstream outFile(currentpath, std::ios::app);
-            if(outFile.is_open()) {
-                outFile << "File Content";
-                std::cout << "File Made";
-                outFile.close();
-            }
-            return 1;
-        }
-        return 0;
-    }
-}
-
-// Renaming a File
-int rename_file (std::stringstream &ss, fs::path currentpath) {
-    std::string old_name, new_name;
-    
-    ss >> std::quoted(old_name);
-    ss >> std::quoted(new_name);
-    if(old_name.empty() || new_name.empty()){
-        std::cout << "no filename in input\n";
-        return 2;
-    }
-    fs::path oldpath = currentpath/old_name;
-    fs::path newpath = currentpath/new_name;
-    
-    if (fs::exists(oldpath)) {
-        if (!fs::exists(newpath)) {
-            std::error_code ec;
-            fs::rename(oldpath, newpath,ec);
-            return 1;
-        }
-        else return 4;
-    }    
-    else return 3;
-}
-
-// Opening the File
-int open_file(std::stringstream &ss, fs::path currentpath) {
-    std::string file_name;
-    
-    ss>> std::quoted(file_name);
-    if(file_name.empty()){
-        std::cout << "no filename in input\n";
-        return 2;
-    }
-    else {
-        currentpath = currentpath/file_name;
-        
-        if (fs::exists(currentpath)) {
-            std::string command = "xdg-open \"" + currentpath.string() + "\" &";
-            system(command.c_str());
-            return 1;
-        }
-        return 3;
-    }
-}
-
-// Changing the Directory
-int change_dir(std::stringstream &ss, fs::path *currentpath) {
-    std::string dir_name;
-    
-    ss >> std::quoted(dir_name);
-    if(dir_name.empty()){
-        std::cout << "no directory name in input\n";
-        return 2;
-    }
-    else {
-        fs::path dirpath = *currentpath/dir_name;
-        if (fs::exists(dirpath)) {
-            *currentpath = dirpath;
-            return 1;
-        }
-        return 3;
-    }
-}
-
-// Make Directory
-int make_dir (std::stringstream &ss, fs::path currentpath) {
-    std::string dir_name;
-    
-    ss >> std::quoted(dir_name);
-    if (dir_name.empty()) {
-        std::cout << "no directory name in input\n";
-        return 2;
-    }
-    else {
-        currentpath = currentpath/dir_name;
-        if (fs::exists(currentpath))
-        return 0;
-        else {
-            fs::create_directories(currentpath);
-            return 1;
-        }
-    }
-}
-
-// Removing the File / Directory
-int remove (std::stringstream &ss, fs::path currentpath) {
-    std::string content;
-    
-    ss >> std::quoted(content);
-    if (content.empty()) {
-        std::cout << "no directory name in input\n";
-        return 2;
-    }
-    else {
-        currentpath = currentpath/content;
-        if (!fs::exists(currentpath))
-        return 3;
-        else {
-            uintmax_t del_count = fs::remove_all(currentpath);
-            return 5;
-        }
-    }
-}
-
-// List Data
-int list (fs::path currentpath, std::vector<std::string> &data_list, std::vector<std::string> &dir_list, std::vector<std::string> &file_list) {
-    data_list.clear();
-    dir_list.clear();
-    file_list.clear();
-    for (const auto& entry : fs::directory_iterator(currentpath)) {
-        data_list.push_back(entry.path().filename().string());
-    }
-    for (std::string data : data_list) {
-        if (fs::is_directory(currentpath/data))
-            dir_list.push_back(data);
-        else
-            file_list.push_back(data);
-    }
-    return 6;
-}
-
-// Gedit the File
-int gedit_file (std::stringstream &ss, fs::path currentpath) {
-    std::string file_name;
-    
-    ss>> std::quoted(file_name);
-    if(file_name.empty()){
-        std::cout << "no filename in input\n";
-        return 2;
-    }
-    else {
-        currentpath = currentpath/file_name;
-        
-        if (fs::exists(currentpath)) {
-            std::string command = "gedit \"" + currentpath.string() + "\" &";
-            system(command.c_str());
-            return 1;
-        }
-        return 3;
-    }
-}
-
-// Nano the File
-int nano_file (std::stringstream &ss, fs::path currentpath) {
-    std::string file_name;
-    
-    ss>> std::quoted(file_name);
-    if(file_name.empty()){
-        std::cout << "no filename in input\n";
-        return 2;
-    }
-    else {
-        currentpath = currentpath/file_name;
-        
-        if (fs::exists(currentpath)) {
-            std::string command = "nano \"" + currentpath.string() + "\" &";
-            system(command.c_str());
-            return 1;
-        }
-        return 3;
-    }
-}
-
-
-// Double Tab Listing Data
-int tab_list(fs::path currentpath, std::vector<std::string> &names, std::vector<std::string> &data_list, std::vector<std::string> &dir_list, std::vector<std::string> &file_list) {
-    data_list.clear();
-    dir_list.clear();
-    file_list.clear();
-    for (std::string data : names) {
-        if (fs::is_directory(currentpath/data))
-            dir_list.push_back(data);
-        else
-            file_list.push_back(data);
-    }
-    return 6;
-}
-
-// Tab Function
-int tab_func (std::string &input, fs::path currentpath, bool double_press, std::vector<std::string> &data_list, std::vector<std::string> &dir_list, std::vector<std::string> &file_list) {
-    std::stringstream ss(input);
-    std::string word, output = "";
-    std::vector<std::string> words, names;
-    
-    if (input.length() <= 0) return 1;
-    
-    else if (input[input.length() - 1] == ' ' && double_press)
-        return list (currentpath, data_list, dir_list, file_list);
-    
-    while (ss >> word)
-        words.push_back(word);
-        
-    for (const auto& entry : fs::directory_iterator(currentpath)) {
-        if (!entry.path().filename().string().find(words[words.size() - 1], 0))
-            names.push_back(entry.path().filename().string());
-    }
-    
-    if (!double_press) {
-        if (names.size() == 1) {
-            words[words.size() - 1] = names[0];
-            for (std::string str : words) {
-                output += str;
-                if (str != words[words.size() - 1])
-                    output += " ";
-            }
-            input = output;
-        }
-        else if (names.size()) {
-            int n = names[0].length();
-            for (int i = 1; i < names.size(); i++) {
-                int m = 0;
-                while (m < names[0].length() && m < names[i].length() && names[0][m] == names[i][m])
-                    m ++;
-                n = std::min(n, m);
-                if (n == 1)
-                    break;
-            }
-            words[words.size() - 1] = names[0].substr(0, n);
-            for (std::string str : words) {
-                output += str;
-                if (str != words[words.size() - 1])
-                    output += " ";
-            }
-            input = output;
-        }
-        return 1;
-    }
-    else if (double_press) {
-        return tab_list(currentpath, names, data_list, dir_list, file_list);
-    }
-    return 1;
-}
-
-// Move File
-int move_file (std::stringstream &ss, fs::path currentpath) {
-    std::string file_name, dest;
-    ss >> std::quoted(file_name);
-    if(file_name.empty()){
-        std::cout << "no filename in input\n";
-        return 2;
-    }
-    ss >> std::quoted(dest);
-    fs::path destpath = dest;
-    if (!fs::is_directory(destpath))
-        return 3;
-    currentpath = currentpath / file_name;
-    destpath = destpath / file_name;
-    fs::rename (currentpath, destpath);
-    return 1;
-}
-
-// Copy File
-int copy_file (std::stringstream &ss, fs::path currentpath) {
-    std::string file_name, dest;
-    ss >> std::quoted(file_name);
-    if(file_name.empty()){
-        std::cout << "no filename in input\n";
-        return 2;
-    }
-    ss >> std::quoted(dest);
-    fs::path destpath = dest;
-    if (!fs::is_directory(destpath))
-        return 3;
-    currentpath = currentpath / file_name;
-    destpath = destpath / file_name;
-    fs::copy_file (currentpath, destpath);
-    return 1;
-}
-
-// Duplicate File
-int duplicate_file (std::stringstream &ss, fs::path currentpath) {
-    std::string file_name, dest;
-    ss >> std::quoted(file_name);
-    if(file_name.empty()){
-        std::cout << "no filename in input\n";
-        return 2;
-    }
-    currentpath = currentpath / file_name;
-    std::string new_name = currentpath.stem().string() + "_copy" + currentpath.extension().string();
-    fs::path dest_path = currentpath;
-    dest_path.replace_filename(new_name);
-    fs::copy_file(currentpath, dest_path);
-    return 1;
-}
-
-
-
 // Virtual Terminal
 void Graphics(fs::path currentpath) {
-    static int maxy = 0;
+    
+    // Raylib Window
     int screen_width = 1400, screen_height = 800;
     InitWindow(screen_width ,screen_height , "AETHER");
-    
     SetTargetFPS(60);
     
+    // Double Press Declarations for Tab Functioning
     double previous_press = 0.0;
     bool double_press = false;
     const double double_press_duration = 0.25;
     
-    std::string input = "";
-    std::vector<Terminal> history;
-    int cursor_pos = 0;
+    // For different function results
     int flag = -1;
-    bool auto_scroll = false;
-    float scroll_offset = 0.0f;
     
-    // Textures Adjustment
+    // For Typing
+    int cursor_pos = 0;
+    std::string input = "";
     
-    Image image = LoadImage("Image3.png");
-        
-    ImageResize(&image,screen_width, screen_height - 40);
-       
-    Texture2D background = LoadTextureFromImage(image);
-        
-    UnloadImage(image);
-    
+    // All Necessary Vectors
+    std::vector<Terminal> history;
     std::vector<std::string> data_list;
     std::vector<std::string> dir_list;
     std::vector<std::string> file_list;
     std::vector<std::string> cmd_history;
-        
-        
+    
+    // Scrolling Declarations
+    static int maxy = 0;
+    bool auto_scroll = false;
+    float scroll_offset = 0.0f;
+    
+    // Background Adjustment
+    Image image = LoadImage("Image.png");
+    ImageResize(&image,screen_width, screen_height - 40);
+    Texture2D background = LoadTextureFromImage(image);
+    UnloadImage(image);
+    
     // Graphics:
     while (!WindowShouldClose()) {
     
+        // Basic Window Details
         screen_width = GetScreenWidth();
         screen_height = GetScreenHeight();
-    
         DrawTexture(background, 0, 40, RAYWHITE);
         
-        
+        // For typing, Graphics ordinate and scrolling
         int key = GetCharPressed();
         int y;
         int wheel = (int)GetMouseWheelMove();
@@ -382,6 +74,7 @@ void Graphics(fs::path currentpath) {
             screen_width = GetScreenWidth();
             screen_height = GetScreenHeight();
             
+            // Reloading Background
             image = LoadImage("Image.png");
             ImageResize(&image,screen_width, screen_height - 40);
             background = LoadTextureFromImage(image);
@@ -390,6 +83,7 @@ void Graphics(fs::path currentpath) {
         
         // Tab Key Functioning
         if (IsKeyPressed (KEY_TAB)) {
+        
             double current_press = GetTime();
             if (current_press - previous_press <= double_press_duration) {
                 double_press = true;
@@ -399,8 +93,12 @@ void Graphics(fs::path currentpath) {
                 double_press = false;
                 previous_press = current_press;
             }
-            flag = tab_func(input, currentpath, double_press, data_list, dir_list, file_list);
+            
+            // Calling Function
+            flag = aether::tab_func(input, currentpath, double_press, data_list, dir_list, file_list);
             cursor_pos = input.length();
+            
+            // Function result for listing Data
             if (flag == 6) {
                 history.push_back({"user@TechnOS:~ $ " + input, VIOLET});
                 for (std::string data : dir_list)
@@ -410,12 +108,13 @@ void Graphics(fs::path currentpath) {
             }
         }
         
-        // Active Line
+        // Active Line (Typing)
         while (key > 0) {
             if (key >= 32 && key <= 125) {
+                
+                // Inserting text between cursor and initial position
                 input.insert(cursor_pos, 1, (char)key);
                 cursor_pos ++;
-                
             }
             key = GetCharPressed();
             auto_scroll = true;
@@ -423,6 +122,8 @@ void Graphics(fs::path currentpath) {
         
         // Deleting
         if ((IsKeyPressed(KEY_BACKSPACE) || IsKeyPressedRepeat(KEY_BACKSPACE)) && cursor_pos > 0) {
+            
+            // Deleting the text btw cursor and initial index
             input.erase(cursor_pos - 1, 1);
             cursor_pos--;
         }
@@ -437,6 +138,7 @@ void Graphics(fs::path currentpath) {
         // Entering
         static int cmd_index;
         if (IsKeyPressed(KEY_ENTER)) {
+        
             auto_scroll = true;
             history.push_back({"user@TechnOS:~ $ " + input, VIOLET});
             
@@ -447,31 +149,31 @@ void Graphics(fs::path currentpath) {
             
             // Command Rule Book
             if (cmd == "touch") {
-                flag = touch_file(ss, currentpath);
+                flag = aether::touch_file(ss, currentpath);
                 std::cout << flag << std::endl;
             }
             else if (cmd == "rename") {
-                flag = rename_file(ss, currentpath);
+                flag = aether::rename_file(ss, currentpath);
                 std::cout << flag << std::endl;
             }
             else if (cmd == "open") {
-                flag = open_file(ss, currentpath);
+                flag = aether::open_file(ss, currentpath);
                 std::cout << flag << std::endl;
             }
             else if (cmd == "cd") {
-                flag = change_dir(ss, &currentpath);
+                flag = aether::change_dir(ss, &currentpath);
                 std::cout << flag << std::endl;
             }
             else if (cmd == "mkdir") {
-                flag = make_dir(ss, currentpath);
+                flag = aether::make_dir(ss, currentpath);
                 std::cout << flag << std::endl;
             }
             else if (cmd == "del") {
-                flag = remove(ss, currentpath);
+                flag = aether::remove(ss, currentpath);
                 std::cout << flag << std::endl;
             }
             else if (cmd == "ls") {
-                flag = list (currentpath, data_list, dir_list, file_list);
+                flag = aether::list (currentpath, data_list, dir_list, file_list);
                 std::cout << flag << std::endl;
             }
             else if (cmd == "help") {
@@ -483,11 +185,23 @@ void Graphics(fs::path currentpath) {
                 history.clear();
             }
             else if (cmd == "gedit") {
-                flag = gedit_file(ss, currentpath);
+                flag = aether::gedit_file(ss, currentpath);
                 std::cout << flag << std::endl;
             }
             else if (cmd == "nano") {
-                flag = nano_file(ss, currentpath);
+                flag = aether::nano_file(ss, currentpath);
+                std::cout << flag << std::endl;
+            }
+            else if (cmd == "move") {
+                flag = aether::move_file(ss, currentpath);
+                std::cout << flag << std::endl;
+            }
+            else if (cmd == "copy") {
+                flag = aether::copy_file(ss, currentpath);
+                std::cout << flag << std::endl;
+            }
+            else if (cmd == "dup") {
+                flag = aether::duplicate_file(ss, currentpath);
                 std::cout << flag << std::endl;
             }
             else {
@@ -576,9 +290,11 @@ void Graphics(fs::path currentpath) {
             input = cmd_history[cmd_index];
             cursor_pos = input.length();
         }
+        
         if (IsKeyPressed(KEY_DOWN) && cmd_index < cmd_history.size()) {
             cmd_index ++;
             auto_scroll = true;
+            
             if (cmd_index == cmd_history.size()) {
                 input = "";
                 cursor_pos = 0;
@@ -603,6 +319,7 @@ void Graphics(fs::path currentpath) {
             int calc_y = 50; 
             int fontx = 20;
             
+            // Calculating the max y ordinate for auto-scrolling offset
             for (int i = 0; i < history.size(); i++) {
                 if (ColorToInt(history[i].color) == ColorToInt(SKYBLUE) || ColorToInt(history[i].color) == ColorToInt(DARKBLUE)) {
                     if (i > 0 && ColorToInt(history[i - 1].color) == ColorToInt(VIOLET))
@@ -635,6 +352,7 @@ void Graphics(fs::path currentpath) {
             calc_y += 25;
             maxy = calc_y;
             
+            // Necessary offset needed until autoscroll ends
             int autoscroll = screen_height - 50 - maxy;
             if (autoscroll < 0) {
                 scroll_offset = autoscroll;
@@ -643,7 +361,6 @@ void Graphics(fs::path currentpath) {
         }
         
         BeginDrawing();
-        
             ClearBackground(BLACK);
             
             // Scrolling
@@ -658,7 +375,6 @@ void Graphics(fs::path currentpath) {
             }
             else 
                 scroll_offset = 0;
-                
             y = scroll_offset + 50;
         
             // Ribbon 
@@ -677,6 +393,7 @@ void Graphics(fs::path currentpath) {
             for (int i = 0; i < history.size(); i++) {
                 int fontsize = (ColorToInt(history[i].color) == ColorToInt(VIOLET)) ? 20 : 15;
                 
+                // For Listing Files, Folders
                 if (ColorToInt(history[i].color) == ColorToInt(SKYBLUE) || ColorToInt(history[i].color) == ColorToInt(DARKBLUE)) {
                     if (ColorToInt(history[i - 1].color) == ColorToInt(VIOLET))
                         fontx = 20;
@@ -695,6 +412,8 @@ void Graphics(fs::path currentpath) {
                     if (i + 1 == history.size() || ColorToInt(history[i + 1].color) == ColorToInt(VIOLET))
                         y += 25;
                 }
+                
+                // Help Commands
                 else if (ColorToInt(history[i].color) == ColorToInt(YELLOW)) {
                     DrawText(history[i].text.c_str(), 20, y, fontsize, history[i].color);
                     y += 20;
@@ -709,6 +428,8 @@ void Graphics(fs::path currentpath) {
                 }
                 else {
                     DrawText(history[i].text.c_str(), 20, y, fontsize, history[i].color);
+                    
+                    // Command history display
                     if (ColorToInt(history[i + 1].color) == ColorToInt(VIOLET))
                         y += 25;
                     else
